@@ -1,18 +1,18 @@
 import ulid
 #
 from http import HTTPStatus
-from typing import Any, List
 #
 from abstractions.service import IService
 #
-from dtos.response.placeOrder import PlaceOrderResponseDTO
+from constants.orderType import OrderType
+#
+from dtos.models.order import OrderDTO
 #
 from errors.badInputError import BadInputError
 #
-from services.matchOrder import MatchOrderService
+from models.orders import Orders
 #
 from repositories.orders import OrdersRepository
-from models.orders import Orders
 #
 from start_utils import orders, trades, session_factory
 #
@@ -52,11 +52,11 @@ class CancelOrderService(IService):
             self.logger.debug("Initialised Order Repository.")
 
             self.logger.debug(f"Fetching order with urn: {data.get('order_urn')}")
-            order: Orders = await orderRepository.get_one_or_none(urn=data.get("order_urn"))
+            order: Orders = await orderRepository.get_one_or_none(urn=data.get("order_urn"), order_active=True)
 
             if not order:
                 raise BadInputError(
-                    response_message="Invalid oreder URN. Order not found.",
+                    response_message="Invalid oreder URN. No Active Order found.",
                     response_key="order_urn",
                     status_code=HTTPStatus.BAD_REQUEST
                 )
@@ -104,7 +104,7 @@ class CancelOrderService(IService):
 
         return is_broadcasted
     
-    async def run(self, data: dict) -> PlaceOrderResponseDTO:
+    async def run(self, data: dict) -> OrderDTO:
         try:
             
             self.logger.debug("Updating Order")
@@ -124,11 +124,17 @@ class CancelOrderService(IService):
             self.logger.debug("Broadcasted order book snapshot")
 
             order: Orders = await self.__fetch_order(order_id=order.id)
-            order: dict = order.to_dict()
-            order["created_at"] = str(order["created_at"])
-            order["updated_at"] = str(order["updated_at"])
     
-            return order
+            return OrderDTO(
+                urn=order.urn,
+                quantity=order.quantity,
+                price=order.price,
+                order_type=OrderType.BUY if order.order_type_id == 1 else OrderType.SELL,
+                average_traded_price=order.average_traded_price,
+                traded_quantity=order.traded_quantity,
+                order_active=True if order.order_active else False,
+                created_at=str(order.created_at)
+            )
 
         except Exception as err:
 

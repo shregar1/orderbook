@@ -1,4 +1,0 @@
-
-
-class PlaceOrderResponseDTO:
-    pass

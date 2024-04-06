@@ -1,16 +1,13 @@
-from datetime import datetime
 from decimal import Decimal
-from pydantic import BaseModel
-from typing import Optional
 
 
-class OrderTransaction(BaseModel):
+class OrderTransactionDTO(dict):
+
     urn: str
-    bid_order_id: int
-    ask_order_id: int
+    bid_order_urn: int
+    ask_order_urn: int
     quantity: int
     price: Decimal
-    execution_timestamp: datetime
+    execution_timestamp: str
     created_by: int
-    created_at: datetime
-    updated_at: Optional[datetime]
+    created_at: str

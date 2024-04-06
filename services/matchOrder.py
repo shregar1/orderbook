@@ -1,17 +1,18 @@
 import ulid
 #
 from datetime import datetime
+from loguru import logger
 from typing import List
 #
 from abstractions.service import IService
 #
+from dtos.models.orderTransaction import OrderTransactionDTO
 #
 from models.orderTransaction import OrderTransaction
 from models.orders import Orders
 #
 from repositories.orderTransaction import OrderTransactionLogRepository
 from repositories.orders import OrdersRepository
-from loguru import logger
 #
 from start_utils import session_factory
 #
@@ -57,7 +58,6 @@ class MatchOrderService(IService):
             self.logger.debug("Commiting database changes")
             await db_session.commit()
             self.logger.debug(f"Updated orders")
-            print(orders)
             return orders
 
     async def __emit_trades(self, trades: dict):
@@ -117,7 +117,15 @@ class MatchOrderService(IService):
                         trade = await self.__create_order_ransaction(order_transaction=trade)
                         self.logger.debug("Created trade.")
 
-                        trades[trade.urn] = trade.to_dict()
+                        trades[trade.urn] = OrderTransactionDTO(
+                            urn=trade.urn,
+                            bid_order_urn=buy_order.get("urn"),
+                            ask_order_urn=sell_order.get("urn"),
+                            quantity=trade.quantity,
+                            price=trade.price,
+                            execution_timestamp=trade.execution_timestamp,
+                            created_at=str(trade.created_at)
+                        )
 
                         self.logger.debug("Broadcasting trades")
                         await self.__emit_trades(trades=trades)

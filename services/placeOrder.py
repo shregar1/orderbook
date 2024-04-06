@@ -6,15 +6,15 @@ from typing import Any
 #
 from abstractions.service import IService
 #
-from dtos.request.placeOder import PlaceOrderRequestDTO
-from dtos.response.placeOrder import PlaceOrderResponseDTO
-#
 from constants.orderType import OrderType
 #
-from services.matchOrder import MatchOrderService
+from dtos.models.order import OrderDTO
+#
+from models.orders import Orders
 #
 from repositories.orders import OrdersRepository
-from models.orders import Orders
+#
+from services.matchOrder import MatchOrderService
 #
 from start_utils import orders, trades, session_factory
 #
@@ -91,7 +91,7 @@ class PlaceOrderService(IService):
 
             return order
     
-    async def run(self, data: dict) -> PlaceOrderResponseDTO:
+    async def run(self, data: dict) -> dict:
 
         try:
             quantity = data.get('quantity')
@@ -136,11 +136,16 @@ class PlaceOrderService(IService):
             self.logger.debug("Broadcasted order book snapshot")
 
             order: Orders = await self.__fetch_order(order_id=order.id)
-            order: dict = order.to_dict()
-            order["created_at"] = str(order["created_at"])
-            order["updated_at"] = str(order["updated_at"])
-
-            return order
+            return OrderDTO(
+                urn=order.urn,
+                quantity=order.quantity,
+                price=order.price,
+                order_type=OrderType.BUY if order.order_type_id == 1 else OrderType.SELL,
+                average_traded_price=order.average_traded_price,
+                traded_quantity=order.traded_quantity,
+                order_active=True if order.order_active else False,
+                created_at=str(order.created_at)
+            )
         
         except Exception as err:
             self.logger.error(f"An error occured while placing order: {err}")
