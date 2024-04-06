@@ -10,3 +10,6 @@ typing_extensions==4.9.0
 ulid-py==1.1.0
 urllib3==2.1.0
 uvicorn==0.24.0.post1
+websocket-client==1.7.0
+websockets==12.0
+widgetsnbextension==4.0.9
